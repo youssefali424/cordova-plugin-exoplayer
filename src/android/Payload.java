@@ -96,6 +96,13 @@ public class Payload {
         return new JSONObject(map);
     }
 
+    public static JSONObject isPlayingChanged(ExoPlayer player) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("eventType", "IS_PLAYING_CHANGED");
+        addPlayerState(map, player);
+        return new JSONObject(map);
+    }
+
     public static JSONObject stateEvent(ExoPlayer player, int playbackState, boolean controllerVisible) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("eventType", "STATE_CHANGED_EVENT");
@@ -207,6 +214,7 @@ public class Payload {
                 map.put("playWhenReady", Boolean.toString(player.getPlayWhenReady()));
                 map.put("playbackState", playbackStateToString(player.getPlaybackState()));
                 map.put("bufferPercentage", Integer.toString(player.getBufferedPercentage()));
+                map.put("isPlaying", Boolean.toString(player.isPlaying()));
             }
             catch(Exception ex) {
                 Log.e(Player.TAG, "Error adding player state", ex);

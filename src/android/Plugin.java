@@ -121,7 +121,7 @@ public class Plugin extends CordovaPlugin {
                 if (self.player == null) {
                     return false;
                 }
-                cordova.getThreadPool().execute(new Runnable() {
+                cordova.getActivity().runOnUiThread(new Runnable() {
                     public void run() {
                         JSONObject response = self.player.getPlayerState();
                         new CallbackResponse(callbackContext).send(PluginResult.Status.OK, response, false);

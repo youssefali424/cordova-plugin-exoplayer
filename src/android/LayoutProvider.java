@@ -53,7 +53,21 @@ public class LayoutProvider {
 
     public static StyledPlayerView getExoPlayerView(Activity activity, Configuration config) {
         StyledPlayerView view = new StyledPlayerView(activity);
-        view.setLayoutParams(new LinearLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT));
+        JSONObject dim = config.getDimensions();
+        ViewGroup.MarginLayoutParams lp;
+        if(null == dim) {
+          lp=  new ViewGroup.MarginLayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+        }
+        else {
+            DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
+            int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dim.optInt("width", WindowManager.LayoutParams.MATCH_PARENT), metrics);
+            int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dim.optInt("height", WindowManager.LayoutParams.MATCH_PARENT), metrics);
+            lp = new ViewGroup.MarginLayoutParams(width, height);
+            int left = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dim.optInt("x", 0), metrics);
+            int top = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dim.optInt("y", 0), metrics);
+            lp.setMargins(left,top,0,0);
+        }
+        view.setLayoutParams(lp);
         if (config.isAspectRatioFillScreen()) {
             view.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
         }

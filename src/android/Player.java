@@ -30,6 +30,7 @@ import android.content.*;
 import android.media.*;
 import android.net.*;
 import android.view.*;
+import android.webkit.WebView;
 import android.widget.*;
 
 import androidx.annotation.NonNull;
@@ -61,7 +62,7 @@ public class Player {
     private int controllerVisibility;
     private boolean paused = false;
     private AudioManager audioManager;
-    private ContentFrameLayout parentLayout;
+    private ViewGroup parentLayout;
 
     public Player(Configuration config, Activity activity, CallbackContext callbackContext, CordovaWebView webView) {
         this.config = config;
@@ -87,6 +88,12 @@ public class Player {
         public void onPlayerError(@NonNull PlaybackException error) {
             JSONObject payload = Payload.playerErrorEvent(Player.this.exoPlayer, error, null);
             new CallbackResponse(Player.this.callbackContext).send(PluginResult.Status.ERROR, payload, true);
+        }
+
+        @Override
+        public void onIsPlayingChanged(boolean isPlaying) {
+            JSONObject payload = Payload.isPlayingChanged(Player.this.exoPlayer);
+            new CallbackResponse(Player.this.callbackContext).send(PluginResult.Status.OK, payload, true);
         }
 
         @Override
@@ -253,20 +260,22 @@ public class Player {
         exoView.setBackgroundColor(Color.BLACK);
 
         try {
-            View webViewImpl = webView.getEngine().getView();
-            Object webViewParent = webViewImpl.getParent();
-
+            View webViewImpl = webView.getView();
+            ViewParent webViewParent = webViewImpl.getParent();
             Log.d(TAG, "Have a " + (webViewImpl == null ? "empty" : "valid") + " parent View");
             if (webViewImpl != null) {
                 Log.d(TAG, "parentView is a " + webViewImpl.getClass().getCanonicalName());
             }
 
             // Cordova webview is in a ContentFrameLayout (for plugin version 12 it is)
-            parentLayout = (ContentFrameLayout)webViewParent;
+            parentLayout = (ViewGroup)webViewParent;
             parentLayout.addView(exoView);
 
             // Keep controls on top of player.
             webViewImpl.setElevation(101);
+            Log.d(TAG, "parentView elevation 99");
+            // webViewImpl.setBackgroundColor(Color.TRANSPARENT);
+            // webViewImpl.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
         }
         catch (Exception e) {
             Log.e(TAG, "Problem adding exoplayer to cordova's webview containers: " + e.getMessage());
@@ -448,15 +457,18 @@ public class Player {
     }
 
     private void play() {
-        paused = false;
-        exoPlayer.setPlayWhenReady(true);
+        if (null != exoPlayer) {
+            paused = false;
+            exoPlayer.setPlayWhenReady(true);
+        }
     }
 
     public void stop() {
         Log.i(TAG, "STOP" +  ( (null == exoPlayer) ? " exoPlayer not yet initialized" : ""));
-
-        paused = false;
-        exoPlayer.stop();
+        if (null != exoPlayer) {
+            paused = false;
+            exoPlayer.stop();
+        }
     }
 
     private long normalizeOffset(long newTime) {
@@ -514,9 +526,11 @@ public class Player {
 
     public void setZIndex(int index) {
         Log.i(TAG, "setZIndex: " + index);
-
-        exoView.setElevation(index);
-        exoView.invalidate();
-        this.parentLayout.invalidate();
+        if(null != exoView)
+        {
+            exoView.setElevation(index);
+            exoView.invalidate();
+            this.parentLayout.invalidate();
+        }
     }
 }
