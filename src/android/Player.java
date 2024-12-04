@@ -361,6 +361,7 @@ public class Player {
                         .setMimeType(MimeTypes.APPLICATION_MPD)
                         .build());
                 break;
+            case C.CONTENT_TYPE_OTHER:
             case C.CONTENT_TYPE_HLS:
                 mediaSource = new HlsMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(new MediaItem.Builder()
