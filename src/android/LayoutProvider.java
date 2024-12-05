@@ -56,7 +56,7 @@ public class LayoutProvider {
         JSONObject dim = config.getDimensions();
         ViewGroup.MarginLayoutParams lp;
         if(null == dim) {
-          lp=  new ViewGroup.MarginLayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+            lp=  new ViewGroup.MarginLayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
         }
         else {
             DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
@@ -81,6 +81,22 @@ public class LayoutProvider {
         return view;
     }
 
+    public static void setExoPlayerViewLayout(Activity activity, StyledPlayerView view , JSONObject dimensions) {
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+        if(null == dimensions) {
+            lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+        }
+        else {
+            DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
+            int left = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dimensions.optInt("x", 0), metrics);
+            int top = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dimensions.optInt("y", 0), metrics);
+            lp.setMargins(left,top,0,0);
+            lp.width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dimensions.optInt("width", WindowManager.LayoutParams.MATCH_PARENT), metrics);
+            lp.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dimensions.optInt("height", WindowManager.LayoutParams.MATCH_PARENT), metrics);
+        }
+        view.requestLayout();
+    }
     public static void setupController(StyledPlayerView parentView, Activity activity, JSONObject controller) {
         if (null != controller) {
             parentView.setUseController(true);

@@ -37,6 +37,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.ContentFrameLayout;
 
 import com.google.android.exoplayer2.*;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.*;
 import com.google.android.exoplayer2.source.dash.*;
 import com.google.android.exoplayer2.source.hls.*;
@@ -285,6 +286,12 @@ public class Player {
         exoView.setOnTouchListener(onTouchListener);
     }
 
+    public void setPlayerDimensions(JSONObject dimensions) {
+      if(null != exoView){
+        LayoutProvider.setExoPlayerViewLayout(activity, exoView, dimensions);
+      }
+    }
+
     private int setupAudio() {
         activity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
         return audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
@@ -350,34 +357,25 @@ public class Player {
                 .setReadTimeoutMs(readTimeout)
                 .setAllowCrossProtocolRedirects(true);
         DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(this.activity, httpDataSourceFactory)
-            .setTransferListener(bandwidthMeter);
+                .setTransferListener(bandwidthMeter);
         MediaSource mediaSource;
         int type = Util.inferContentType(uri);
-        switch (type) {
-            case C.CONTENT_TYPE_DASH:
-                mediaSource = new DashMediaSource.Factory(dataSourceFactory)
+        mediaSource = switch (type) {
+            case C.CONTENT_TYPE_DASH -> new DashMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(new MediaItem.Builder()
-                        .setUri(uri)
-                        .setMimeType(MimeTypes.APPLICATION_MPD)
-                        .build());
-                break;
-            case C.CONTENT_TYPE_OTHER:
-            case C.CONTENT_TYPE_HLS:
-                mediaSource = new HlsMediaSource.Factory(dataSourceFactory)
-                    .createMediaSource(new MediaItem.Builder()
-                        .setUri(uri)
-                        .setMimeType(MimeTypes.APPLICATION_M3U8)
-                        .build());
-                break;
-            case C.CONTENT_TYPE_SS:
-                mediaSource = new SsMediaSource.Factory(dataSourceFactory)
+                            .setUri(uri)
+                            .setMimeType(MimeTypes.APPLICATION_MPD)
+                            .build());
+            case C.CONTENT_TYPE_HLS -> new HlsMediaSource.Factory(dataSourceFactory)
+                    .createMediaSource(MediaItem.fromUri(uri)
+                    );
+            case C.CONTENT_TYPE_SS -> new SsMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(MediaItem.fromUri(uri));
-                break;
-            default:
-                mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory)
+            case C.CONTENT_TYPE_OTHER, C.CONTENT_TYPE_RTSP -> new ProgressiveMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(MediaItem.fromUri(uri));
-                break;
-        }
+            default -> new ProgressiveMediaSource.Factory(dataSourceFactory)
+                    .createMediaSource(MediaItem.fromUri(uri));
+        };
 
         String subtitleUrl = config.getSubtitleUrl();
         if (null != subtitleUrl) {
@@ -385,13 +383,13 @@ public class Player {
             String subtitleType = inferSubtitleType(subtitleUri);
             Log.i(TAG, "Subtitle present: " + subtitleUri + ", type=" + subtitleType);
             MediaSource subtitleSource = new SingleSampleMediaSource.Factory(httpDataSourceFactory)
-                .createMediaSource(
-                    new MediaItem.SubtitleConfiguration.Builder(uri)
-                            .setMimeType(subtitleType)
-                            .setLanguage("en")
-                            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
-                            .build(),
-                    C.TIME_UNSET);
+                    .createMediaSource(
+                            new MediaItem.SubtitleConfiguration.Builder(uri)
+                                    .setMimeType(subtitleType)
+                                    .setLanguage("en")
+                                    .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+                                    .build(),
+                            C.TIME_UNSET);
             return new MergingMediaSource(mediaSource, subtitleSource);
         }
         else {
@@ -449,16 +447,16 @@ public class Player {
         }
     }
 
-    private void pause() {
+    public void pause() {
 
-        if (null != exoPlayer) {
+        if (null != exoPlayer && !paused) {
             paused = true;
             exoPlayer.setPlayWhenReady(false);
         }
     }
 
-    private void play() {
-        if (null != exoPlayer) {
+    public void play() {
+        if (null != exoPlayer && paused) {
             paused = false;
             exoPlayer.setPlayWhenReady(true);
         }

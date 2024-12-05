@@ -50,6 +50,18 @@ public class Plugin extends CordovaPlugin {
                     }
                 });
                 return true;
+            } else if (action.equals("setDimensions")) {
+                if (self.player == null) {
+                    return false;
+                }
+                JSONObject params = data.optJSONObject(0);
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        self.player.setPlayerDimensions(params);
+                        new CallbackResponse(callbackContext).send(PluginResult.Status.NO_RESULT, true);
+                    }
+                });
+                return true;
             }
             else if (action.equals("setStream")) {
                 if (self.player == null) {
@@ -185,6 +197,28 @@ public class Plugin extends CordovaPlugin {
                             self.player.setZIndex(zIndex);
                             new CallbackResponse(callbackContext).send(PluginResult.Status.NO_RESULT, true);
                         }
+                    }
+                });
+                return true;
+            } else if (action.equals("play")) {
+                 if (self.player == null) {
+                    return false;
+                }
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        self.player.play();
+                        new CallbackResponse(callbackContext).send(PluginResult.Status.NO_RESULT, true);
+                    }
+                });
+                return true;
+            } else if (action.equals("pause")) {
+                 if (self.player == null) {
+                    return false;
+                }
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        self.player.pause();
+                        new CallbackResponse(callbackContext).send(PluginResult.Status.NO_RESULT, true);
                     }
                 });
                 return true;

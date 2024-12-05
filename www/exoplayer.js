@@ -25,12 +25,21 @@
 module.exports = {
     show: function (parameters, successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "show", [parameters]);
+    }, 
+    setDimensions: function (parameters, successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "ExoPlayer", "setDimensions", [parameters]);
     },
     setStream: function (url, controller, successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "setStream", [url, controller]);
     },
     playPause: function (successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "playPause", []);
+    }, 
+    play: function (successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "ExoPlayer", "play", []);
+    },
+    pause: function (successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "ExoPlayer", "pause", []);
     },
     stop: function (successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "stop", []);
@@ -56,7 +65,7 @@ module.exports = {
     close: function (successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "close", []);
     },
-    setZIndex: function(zIndex, successCallback, errorCallback) {
+    setZIndex: function (zIndex, successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "ExoPlayer", "setZIndex", [zIndex]);
     }
 };
