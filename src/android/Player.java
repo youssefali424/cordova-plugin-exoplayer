@@ -23,6 +23,8 @@
  */
 package co.frontyard.cordova.plugin.exoplayer;
 
+import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+
 import android.graphics.Color;
 import android.util.Log;
 import android.app.*;
@@ -287,9 +289,9 @@ public class Player {
     }
 
     public void setPlayerDimensions(JSONObject dimensions) {
-      if(null != exoView){
-        LayoutProvider.setExoPlayerViewLayout(activity, exoView, dimensions);
-      }
+        if(null != exoView){
+            LayoutProvider.setExoPlayerViewLayout(activity, exoView, dimensions);
+        }
     }
 
     private int setupAudio() {
@@ -305,7 +307,7 @@ public class Player {
         DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter.Builder(this.activity).build();
         //TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveVideoTrackSelection.Factory(bandwidthMeter);
 
-        exoPlayer = new ExoPlayer.Builder(this.activity).build();
+        exoPlayer = new ExoPlayer.Builder(this.activity).setWakeMode(WAKE_MODE_NETWORK).build();
         exoPlayer.addListener(playerEventListener);
         if (null != exoView) {
             exoView.setPlayer(new ForwardingPlayer(exoPlayer) {

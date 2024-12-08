@@ -27,7 +27,10 @@
                 <param name="android-package" value="co.frontyard.cordova.plugin.exoplayer.Plugin"/>
             </feature>
         </config-file>
-
+        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/uses-permission" 
+                     xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+        </edit-config>
         <source-file src="src/res/values/ids.xml" target-dir="res/values/"/>
         <source-file src="src/res/values/constants.xml" target-dir="res/values/"/>
         <source-file src="src/res/values/styles.xml" target-dir="res/values/"/>
