@@ -62,6 +62,16 @@ public class Plugin extends CordovaPlugin {
                     }
                 });
                 return true;
+            } else if (action.equals("setActiveTrack")) {
+                if (self.player == null) {
+                    return false;
+                }
+                JSONObject params = data.optJSONObject(0);
+                cordova.getActivity().runOnUiThread(() -> {
+                    self.player.setActiveTrack(params);
+                    new CallbackResponse(callbackContext).send(PluginResult.Status.NO_RESULT, true);
+                });
+                return true;
             }
             else if (action.equals("setStream")) {
                 if (self.player == null) {

@@ -23,9 +23,16 @@
  */
 package co.frontyard.cordova.plugin.exoplayer;
 
+import static com.google.android.exoplayer2.C.*;
+
 import android.util.Log;
 import android.view.*;
+
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.*;
+import com.google.common.collect.ImmutableList;
+
 import java.lang.*;
 import java.lang.Boolean;
 import java.lang.Integer;
@@ -56,7 +63,7 @@ public class Payload {
     }
 
     public static JSONObject startEvent(ExoPlayer player, String audioFocus) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "START_EVENT");
         map.put("audioFocus", audioFocus);
         addPlayerState(map, player);
@@ -64,14 +71,14 @@ public class Payload {
     }
 
     public static JSONObject stopEvent(ExoPlayer player) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "STOP_EVENT");
         return new JSONObject(map);
     }
 
     public static JSONObject keyEvent(KeyEvent event) {
         int eventAction = event.getAction();
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "KEY_EVENT");
         map.put("eventAction", eventAction == KeyEvent.ACTION_DOWN ? "ACTION_DOWN" : eventAction == KeyEvent.ACTION_UP ? "ACTION_UP" : "" + eventAction);
         map.put("eventKeycode", KeyEvent.keyCodeToString(event.getKeyCode()));
@@ -80,7 +87,7 @@ public class Payload {
 
     public static JSONObject touchEvent(MotionEvent event) {
         int eventAction = event.getAction();
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "TOUCH_EVENT");
         map.put("eventAction", eventAction == MotionEvent.ACTION_DOWN ? "ACTION_DOWN" : eventAction == MotionEvent.ACTION_UP ? "ACTION_UP" : eventAction == MotionEvent.ACTION_MOVE ? "ACTION_MOVE" : "" + eventAction);
         map.put("eventAxisX", Float.toString(event.getX()));
@@ -89,7 +96,7 @@ public class Payload {
     }
 
     public static JSONObject loadingEvent(ExoPlayer player, boolean loading) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "LOADING_EVENT");
         map.put("loading", Boolean.toString(loading));
         addPlayerState(map, player);
@@ -97,14 +104,14 @@ public class Payload {
     }
 
     public static JSONObject isPlayingChanged(ExoPlayer player) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "IS_PLAYING_CHANGED");
         addPlayerState(map, player);
         return new JSONObject(map);
     }
 
     public static JSONObject stateEvent(ExoPlayer player, int playbackState, boolean controllerVisible) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "STATE_CHANGED_EVENT");
         addPlayerState(map, player);
         map.put("playbackState", playbackStateToString(playbackState));
@@ -113,7 +120,7 @@ public class Payload {
     }
 
     public static JSONObject positionDiscontinuityEvent(ExoPlayer player, int reason) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "POSITION_DISCONTINUITY_EVENT");
         map.put("reason", Integer.toString(reason));
         addPlayerState(map, player);
@@ -121,7 +128,7 @@ public class Payload {
     }
 
     public static JSONObject seekEvent(ExoPlayer player, long offset) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "SEEK_EVENT");
         map.put("offset", Long.toString(offset));
         addPlayerState(map, player);
@@ -129,7 +136,7 @@ public class Payload {
     }
 
     public static JSONObject timelineChangedEvent(ExoPlayer player, Timeline timeline) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "TIMELINE_EVENT");
         int periodCount = timeline.getPeriodCount();
         for (int i = 0; i < periodCount; i++) {
@@ -143,13 +150,13 @@ public class Payload {
             Timeline.Window window = new Timeline.Window();
             timeline.getWindow(firstWindow, window);
             map.put("positionInFirstPeriod", Long.toString(window.getPositionInFirstPeriodMs()));
-        }        
+        }
         addPlayerState(map, player);
         return new JSONObject(map);
     }
 
     public static JSONObject audioFocusEvent(ExoPlayer player, String state) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "AUDIO_FOCUS_EVENT");
         map.put("audioFocus", state);
         addPlayerState(map, player);
@@ -158,12 +165,11 @@ public class Payload {
 
     public static JSONObject playerErrorEvent(ExoPlayer player, PlaybackException origin, String message) {
         int type = 0;
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, Object> map = new HashMap<String, Object>();
         map.put("eventType", "PLAYER_ERROR_EVENT");
 
-        if (null != origin && origin instanceof ExoPlaybackException) {
-            Throwable error = (Throwable) origin;
-            ExoPlaybackException exoOrigin = (ExoPlaybackException) origin;
+        if (origin instanceof ExoPlaybackException exoOrigin) {
+            Throwable error = origin;
 
             type = exoOrigin.type;
             if (type == ExoPlaybackException.TYPE_RENDERER) {
@@ -186,15 +192,10 @@ public class Payload {
                 error = error.getCause();
             }
             error.fillInStackTrace();
-            StringBuffer stackTrace = new StringBuffer();
-            if (null != error) {
-                StackTraceElement[] st = error.getStackTrace();
-                if (null != st && st.length > 0) {
-                    for (int i = 0; i < st.length; i++) {
-                        StackTraceElement elem = st[i];
-                        stackTrace.append(elem.getClassName() + "#" + elem.getMethodName() + "@" + elem.getLineNumber() + (elem.isNativeMethod() ? " NATIVE" : "")).append("\n");
-                    }
-                }
+            StringBuilder stackTrace = new StringBuilder();
+            StackTraceElement[] st = error.getStackTrace();
+            for (StackTraceElement elem : st) {
+                stackTrace.append(elem.getClassName()).append("#").append(elem.getMethodName()).append("@").append(elem.getLineNumber()).append(elem.isNativeMethod() ? " NATIVE" : "").append("\n");
             }
             map.put("stackTrace", stackTrace.toString());
             map.put("errorMessage", error.getMessage());
@@ -205,8 +206,54 @@ public class Payload {
 
         return new JSONObject(map);
     }
+    public static JSONObject tracksChanged(ExoPlayer player, Tracks tracks) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("eventType", "TRACKS_CHANGED");
+        ImmutableList<Tracks. Group> groups = tracks.getGroups();
+        ArrayList<Map<String, Object>> arr = new ArrayList<>();
+        for (int i = 0; i < groups.size(); i++) {
+            Tracks.Group group = groups.get(i);
+            String type = switch (group.getType()){
+                case TRACK_TYPE_TEXT -> "Text";
+                case TRACK_TYPE_AUDIO->"Audio";
+                default -> null;
+            };
+            if (null != type) {
+                for (int j = 0; j < group.length; j++) {
+                    if(FORMAT_HANDLED == group.getTrackSupport(j)) {
+                        Map<String, Object> trackMap = getTrackMap(group, i, j, type);
+                        arr.add(trackMap);
+                    }
+                }
+            }
 
-    private static void addPlayerState(Map<String, String> map, ExoPlayer player) {
+        }
+        map.put("tracks", arr);
+        addPlayerState(map, player);
+        return new JSONObject(map);
+    }
+
+    private static @NonNull Map<String, Object> getTrackMap(Tracks.Group group, int groupIndex, int j, String type) {
+        Map<String, Object> trackMap = new HashMap<>();
+        Format format = group.getTrackFormat(j);
+        trackMap.put("type", type);
+        trackMap.put("codecs", format.codecs);
+        trackMap.put("bitrate", format.bitrate);
+        trackMap.put("width", format.width);
+        trackMap.put("height", format.height);
+        trackMap.put("frameRate", format.frameRate);
+        trackMap.put("rotationDegrees", format.rotationDegrees);
+        trackMap.put("selectionFlags", format.selectionFlags);
+        trackMap.put("channelCount", format.channelCount);
+        trackMap.put("sampleRate", format.sampleRate);
+        trackMap.put("language", format.language);
+        trackMap.put("isSelected", group.isTrackSelected(j));
+        trackMap.put("index", j);
+        trackMap.put("groupIndex", groupIndex);
+        return trackMap;
+    }
+
+    private static  void addPlayerState(Map<String, Object> map, ExoPlayer player) {
         if (null != player) {
             try {
                 map.put("duration", Long.toString(player.getDuration()));

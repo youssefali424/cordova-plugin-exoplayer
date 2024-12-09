@@ -23,7 +23,10 @@
  */
 package co.frontyard.cordova.plugin.exoplayer;
 
+import static com.google.android.exoplayer2.C.TRACK_TYPE_AUDIO;
+import static com.google.android.exoplayer2.C.TRACK_TYPE_TEXT;
 import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+import com.google.common.collect.ImmutableList;
 
 import android.graphics.Color;
 import android.util.Log;
@@ -44,6 +47,7 @@ import com.google.android.exoplayer2.source.*;
 import com.google.android.exoplayer2.source.dash.*;
 import com.google.android.exoplayer2.source.hls.*;
 import com.google.android.exoplayer2.source.smoothstreaming.*;
+import com.google.android.exoplayer2.trackselection.TrackSelectionOverride;
 import com.google.android.exoplayer2.ui.*;
 import com.google.android.exoplayer2.upstream.*;
 import com.google.android.exoplayer2.util.*;
@@ -66,7 +70,7 @@ public class Player {
     private boolean paused = false;
     private AudioManager audioManager;
     private ViewGroup parentLayout;
-
+    private Tracks lastSeenTracks;
     public Player(Configuration config, Activity activity, CallbackContext callbackContext, CordovaWebView webView) {
         this.config = config;
         this.activity = activity;
@@ -85,6 +89,15 @@ public class Player {
         @Override
         public void onPlaybackParametersChanged(@NonNull PlaybackParameters playbackParameters) {
             Log.i(TAG, "Playback parameters changed");
+        }
+
+        @Override
+        public void onTracksChanged(@NonNull Tracks tracks) {
+            if(lastSeenTracks != tracks) {
+                lastSeenTracks = tracks;
+                JSONObject payload = Payload.tracksChanged(Player.this.exoPlayer, tracks);
+                new CallbackResponse(Player.this.callbackContext).send(PluginResult.Status.OK, payload, true);
+            }
         }
 
         @Override
@@ -291,6 +304,42 @@ public class Player {
     public void setPlayerDimensions(JSONObject dimensions) {
         if(null != exoView){
             LayoutProvider.setExoPlayerViewLayout(activity, exoView, dimensions);
+        }
+    }
+
+    public void setActiveTrack(JSONObject trackData) {
+        if(null != exoPlayer){
+           String typeStr=  trackData.optString("type");
+            int trackIndex =  trackData.optInt("index", -1);
+            int groupIndex =  trackData.optInt("group", -1);
+            int type = switch (typeStr){
+                   case "Text" -> TRACK_TYPE_TEXT;
+                   case "Audio" -> TRACK_TYPE_AUDIO;
+                   default -> -1;
+               };
+           if(type >= 0 && trackIndex >= 0 && groupIndex >= 0 && lastSeenTracks != null)
+           {
+               ImmutableList<Tracks. Group> groups = lastSeenTracks.getGroups();
+               if(groupIndex < groups.size()) {
+                    Tracks.Group trackGroup = groups.get(groupIndex);
+                    //    for (int i = 0; i < groups.size(); i++) {
+                    //        Tracks.Group  group= groups.get(groupIndex);
+                    //        if (group.getType() == type) {
+                    //            trackGroup = group;
+                    //        }
+                    //    }
+                    if(null != trackGroup) {
+                        exoPlayer.setTrackSelectionParameters(
+                                exoPlayer
+                                        .getTrackSelectionParameters()
+                                        .buildUpon()
+                                        .setOverrideForType(
+                                                new TrackSelectionOverride(
+                                                        trackGroup.getMediaTrackGroup(), /* trackIndex= */ trackIndex))
+                                        .build());
+                    }
+               }
+           }
         }
     }
 
